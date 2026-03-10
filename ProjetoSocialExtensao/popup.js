@@ -214,18 +214,60 @@ async function handleSyncMatriculas() {
 
         if (destCpfIndex === -1) throw new Error(`Coluna Destino "CPF" não encontrada em "${destSheetName}".`);
 
-        // 5. Read Existing CPFs in Destination
+        // 5. Read Existing CPFs and Matriculas in Destination
         const destDataRange = `'${destSheetName}'!A2:Z`;
         const destResp = await api.getSheetValues(spreadsheetId, destDataRange);
         const destRows = destResp.values || [];
 
         const existingCPFs = new Set();
-        destRows.forEach(row => {
-            if (row[destCpfIndex]) existingCPFs.add(row[destCpfIndex].trim());
-        });
+        const existingMatriculas = new Set();
+        const updates = [];
+        let fixedDuplicatesCount = 0;
 
-        // 6. Process Rows
-        showStatus(`Processando ${sourceRows.length} registros...`, 'loading');
+        for (let i = 0; i < destRows.length; i++) {
+            const row = destRows[i];
+            const destRowNumber = i + 2;
+
+            if (destCpfIndex !== -1 && row[destCpfIndex]) {
+                existingCPFs.add(row[destCpfIndex].trim());
+            }
+
+            if (destMatriculaIndex !== -1) {
+                const currentMatricula = row[destMatriculaIndex] ? row[destMatriculaIndex].trim() : null;
+
+                if (currentMatricula) {
+                    if (existingMatriculas.has(currentMatricula)) {
+                        // Encontrou uma duplicata que já estava na aba Destino! Precisa corrigir.
+                        let seedId = destRowNumber + 500000; // Incrementa bastante para gerar uma nova
+                        let newMatricula = await generateMatricula(seedId);
+                        
+                        while (existingMatriculas.has(newMatricula)) {
+                            seedId += 100000;
+                            newMatricula = await generateMatricula(seedId);
+                        }
+                        
+                        // Prepara a atualização dessa célula específica
+                        updates.push({
+                            range: `'${destSheetName}'!${getColumnLetter(destMatriculaIndex + 1)}${destRowNumber}`,
+                            values: [[newMatricula]]
+                        });
+                        existingMatriculas.add(newMatricula);
+                        fixedDuplicatesCount++;
+                    } else {
+                        existingMatriculas.add(currentMatricula);
+                    }
+                }
+            }
+        }
+
+        // Se encontrou duplicatas já existentes, corrige elas primeiro
+        if (updates.length > 0) {
+            showStatus(`Corrigindo ${updates.length} matrículas duplicadas na aba destino...`, 'loading');
+            await api.batchUpdateValues(spreadsheetId, updates);
+        }
+
+        // 6. Process Source Rows for NEW entries
+        showStatus(`Processando ${sourceRows.length} registros da origem...`, 'loading');
 
         const newRows = [];
         let skippedCount = 0;
@@ -248,8 +290,16 @@ async function handleSyncMatriculas() {
                 continue;
             }
 
-            // Generate Matricula
-            const matricula = await generateMatricula(sourceRowNumber);
+            // Generate Unique Matricula
+            let seedId = sourceRowNumber;
+            let matricula = await generateMatricula(seedId);
+            
+            // Loop until we find a unique matricula
+            while (existingMatriculas.has(matricula)) {
+                seedId += 100000; // Increment substantially to avoid near collisions
+                matricula = await generateMatricula(seedId);
+            }
+            existingMatriculas.add(matricula);
 
             // Build Row
             const newRow = new Array(destHeaders.length).fill("");
@@ -263,11 +313,11 @@ async function handleSyncMatriculas() {
 
         // 7. Write to Destination
         if (newRows.length > 0) {
-            showStatus(`Escrevendo ${newRows.length} linhas...`, 'loading');
+            showStatus(`Escrevendo ${newRows.length} linhas novas...`, 'loading');
             await api.appendValues(spreadsheetId, `'${destSheetName}'!A1`, newRows, 'USER_ENTERED');
-            showStatus(`Concluído! ${newRows.length} adicionados. ${skippedCount} duplicados ignorados.`, 'success');
+            showStatus(`Concluído! ${newRows.length} adicionados. ${fixedDuplicatesCount} duplicatas corrigidas.`, 'success');
         } else {
-            showStatus(`Tudo atualizado! ${skippedCount} registros já existiam.`, 'success');
+            showStatus(`Tudo atualizado! ${fixedDuplicatesCount > 0 ? fixedDuplicatesCount + ' duplicatas corrigidas.' : 'Nenhuma novidade ou erro encontrado.'}`, 'success');
         }
 
     } catch (error) {

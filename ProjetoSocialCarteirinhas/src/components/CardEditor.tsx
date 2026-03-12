@@ -13,10 +13,10 @@ interface CardEditorProps {
 
 export function CardEditor({ student, onUpdateStudent, dirHandle }: CardEditorProps) {
     // Load background template
-    const [bgImage] = useImage('/input/CARTEIRINHA 2026 MODELO.png');
+    const [bgImage] = useImage(`${import.meta.env.BASE_URL}input/CARTEIRINHA 2026 MODELO.png`);
 
     // Try loading student photo using various extensions
-    const [photoUrl, setPhotoUrl] = useState(`/images/Fotos Projeto Social/${student.cpfLimpo}.jpg`);
+    const [photoUrl, setPhotoUrl] = useState(`${import.meta.env.BASE_URL}images/Fotos Projeto Social/${student.cpfLimpo}.jpg`);
     const [photoImage, status] = useImage(photoUrl);
 
     const stageRef = useRef<any>(null);
@@ -56,16 +56,16 @@ export function CardEditor({ student, onUpdateStudent, dirHandle }: CardEditorPr
     useEffect(() => {
         if (status === 'failed') {
             if (photoUrl.endsWith('.jpg')) {
-                setPhotoUrl(`/images/Fotos Projeto Social/${student.cpfLimpo}.png`);
+                setPhotoUrl(`${import.meta.env.BASE_URL}images/Fotos Projeto Social/${student.cpfLimpo}.png`);
             } else if (photoUrl.endsWith('.png')) {
-                setPhotoUrl(`/images/Fotos Projeto Social/${student.cpfLimpo}.webp`);
+                setPhotoUrl(`${import.meta.env.BASE_URL}images/Fotos Projeto Social/${student.cpfLimpo}.webp`);
             }
         }
     }, [status, photoUrl, student.cpfLimpo]);
 
     // Reset photo URL when a new student is selected
     useEffect(() => {
-        setPhotoUrl(`/images/Fotos Projeto Social/${student.cpfLimpo}.jpg`);
+        setPhotoUrl(`${import.meta.env.BASE_URL}images/Fotos Projeto Social/${student.cpfLimpo}.jpg`);
         setIsSelected(false);
     }, [student.cpfLimpo]);
 

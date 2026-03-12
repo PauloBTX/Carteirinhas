@@ -96,7 +96,7 @@ export function ExcelUploader({ onDataLoaded }: ExcelUploaderProps) {
                     horario,
                     matricula,
                     dataNascimento,
-                    fotoUrl: `/images/Fotos Projeto Social/${cleanCpf}.jpg` // fallback to .jpg, will handle alternatives in the editor
+                    fotoUrl: `${import.meta.env.BASE_URL}images/Fotos Projeto Social/${cleanCpf}.jpg` // fallback to .jpg, will handle alternatives in the editor
                 };
             }).filter(s => s.cpfLimpo); // Only keep rows with a valid CPF
 

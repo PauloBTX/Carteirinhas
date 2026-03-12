@@ -3,7 +3,7 @@ import { Stage, Layer, Image as KonvaImage, Text, Group, Transformer } from 'rea
 import useImage from 'use-image';
 import QRCode from 'qrcode';
 import { Student } from '../types';
-import { Download, AlertTriangle } from 'lucide-react';
+import { Download, AlertTriangle, Upload } from 'lucide-react';
 
 interface CardEditorProps {
     student: Student;
@@ -23,6 +23,26 @@ export function CardEditor({ student, onUpdateStudent, dirHandle }: CardEditorPr
     const photoRef = useRef<any>(null);
     const trRef = useRef<any>(null);
     const containerRef = useRef<HTMLDivElement>(null);
+    const fileInputRef = useRef<HTMLInputElement>(null);
+    const localBlobUrlRef = useRef<string | null>(null);
+
+    const handleLocalPhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        
+        if (localBlobUrlRef.current) {
+            URL.revokeObjectURL(localBlobUrlRef.current);
+        }
+        
+        const objectUrl = URL.createObjectURL(file);
+        localBlobUrlRef.current = objectUrl;
+        setPhotoUrl(objectUrl);
+        
+        // Clear value so the same file can be selected again if needed
+        if (fileInputRef.current) {
+            fileInputRef.current.value = "";
+        }
+    };
 
     const [isSelected, setIsSelected] = useState(false);
     const [dimensions, setDimensions] = useState({ width: 0, height: 0, scale: 1 });
@@ -65,6 +85,10 @@ export function CardEditor({ student, onUpdateStudent, dirHandle }: CardEditorPr
 
     // Reset photo URL when a new student is selected
     useEffect(() => {
+        if (localBlobUrlRef.current) {
+            URL.revokeObjectURL(localBlobUrlRef.current);
+            localBlobUrlRef.current = null;
+        }
         setPhotoUrl(`${import.meta.env.BASE_URL}images/Fotos Projeto Social/${student.cpfLimpo}.jpg`);
         setIsSelected(false);
     }, [student.cpfLimpo]);
@@ -219,6 +243,21 @@ export function CardEditor({ student, onUpdateStudent, dirHandle }: CardEditorPr
 
                 <div className="pt-4 flex flex-col gap-3">
                     <button
+                        onClick={() => fileInputRef.current?.click()}
+                        className="w-full bg-gray-100 hover:bg-gray-200 text-gray-700 border border-gray-300 font-medium py-2.5 px-4 rounded-md shadow-sm flex items-center justify-center gap-2"
+                    >
+                        <Upload className="w-5 h-5" />
+                        Carregar Foto Manual
+                    </button>
+                    <input 
+                        type="file" 
+                        accept="image/*" 
+                        className="hidden" 
+                        ref={fileInputRef} 
+                        onChange={handleLocalPhotoUpload} 
+                    />
+
+                    <button
                         onClick={handleExport}
                         className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2.5 px-4 rounded-md shadow-sm flex items-center justify-center gap-2"
                     >
@@ -285,7 +324,7 @@ export function CardEditor({ student, onUpdateStudent, dirHandle }: CardEditorPr
                                     }}
                                 >
                                     {status === 'loading' && <Text text="Carregando..." x={30} y={130} fontSize={16} fill="gray" />}
-                                    {status === 'failed' && <Text text="Foto não encontrada" x={15} y={130} fontSize={14} fill="red" />}
+                                    {status === 'failed' && <Text text="Foto não\nencontrada" x={45} y={120} fontSize={14} fill="red" align="center" />}
                                     {photoImage && (
                                         <KonvaImage
                                             ref={photoRef}

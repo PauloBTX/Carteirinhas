@@ -43,8 +43,8 @@ export function StudentSidebar({ students, selectedStudent, onSelectStudent }: S
                                 className={`p-4 cursor-pointer hover:bg-gray-50 transition-colors ${selectedStudent?.cpfLimpo === student.cpfLimpo ? 'bg-blue-50 border-l-4 border-blue-500' : ''}`}
                                 onClick={() => onSelectStudent(student)}
                             >
-                                <div className={`font-medium truncate ${student.problema ? 'text-orange-500' : student.gerada ? 'text-red-600' : 'text-gray-800'}`}>
-                                    {student.nome} {student.problema && ' (Problema)'}
+                                <div className={`font-medium truncate ${student.problema ? 'text-orange-500' : (student.gerada || student.constaNaLista) ? 'text-red-600' : 'text-gray-800'}`}>
+                                    {student.nome} {student.problema && ' (Problema)'} {student.constaNaLista && ' (Já Gerada)'}
                                 </div>
                                 <div className="text-xs text-gray-500 mt-1 flex justify-between">
                                     <span>CPF: {student.cpf}</span>

@@ -9,4 +9,5 @@ export interface Student {
     fotoUrl: string; // usually cpfLimpo + .jpg/.png/.webp
     gerada?: boolean; // track if the card has been generated/saved
     problema?: boolean; // track if there's an issue with the card
+    constaNaLista?: boolean; // track if CPF is in public/input/lista_arquivos.txt
 }

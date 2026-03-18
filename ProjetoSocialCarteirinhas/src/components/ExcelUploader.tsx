@@ -15,9 +15,23 @@ export function ExcelUploader({ onDataLoaded }: ExcelUploaderProps) {
         if (!file) return;
 
         const reader = new FileReader();
-        reader.onload = (evt) => {
+        reader.onload = async (evt) => {
             const bstr = evt.target?.result;
             const wb = XLSX.read(bstr, { type: 'binary' });
+
+            const listaCpfs = new Set<string>();
+            try {
+                const res = await fetch(`${import.meta.env.BASE_URL}input/lista_arquivos.txt`);
+                if (res.ok) {
+                    const text = await res.text();
+                    text.split('\n').forEach(line => {
+                        const clean = line.replace(/\D/g, '');
+                        if (clean) listaCpfs.add(clean);
+                    });
+                }
+            } catch (e) {
+                console.error("Erro ao carregar lista de arquivos gerados", e);
+            }
 
             const respostasSheetName = "Respostas ao formulário 1";
             const matriculasSheetName = "Matriculas";
@@ -96,7 +110,8 @@ export function ExcelUploader({ onDataLoaded }: ExcelUploaderProps) {
                     horario,
                     matricula,
                     dataNascimento,
-                    fotoUrl: `${import.meta.env.BASE_URL}images/Fotos Projeto Social/${cleanCpf}.jpg` // fallback to .jpg, will handle alternatives in the editor
+                    fotoUrl: `${import.meta.env.BASE_URL}images/Fotos Projeto Social/${cleanCpf}.jpg`, // fallback to .jpg, will handle alternatives in the editor
+                    constaNaLista: listaCpfs.has(cleanCpf)
                 };
             }).filter(s => s.cpfLimpo); // Only keep rows with a valid CPF
 

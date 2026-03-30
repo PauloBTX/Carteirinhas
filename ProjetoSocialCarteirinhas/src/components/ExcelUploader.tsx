@@ -34,7 +34,7 @@ export function ExcelUploader({ onDataLoaded }: ExcelUploaderProps) {
             }
 
             const respostasSheetName = "Respostas ao formulário 1";
-            const matriculasSheetName = "Matriculas";
+            const matriculasSheetName = "QR Code";
 
             const respostasSheet = wb.Sheets[respostasSheetName] || wb.Sheets[wb.SheetNames[0]]; // fallback to first sheet
             const matriculasSheet = wb.Sheets[matriculasSheetName];

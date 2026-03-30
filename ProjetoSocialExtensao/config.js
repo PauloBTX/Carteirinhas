@@ -2,7 +2,7 @@ export const CONFIG = {
     SPREADSHEET_URL: "https://docs.google.com/spreadsheets/d/1_I8rRBXr8E8e4K8B7DPt7FlYVE3_87ypTTmo35syMhY/edit?resourcekey=&gid=1251372719#gid=1251372719",
     SPREADSHEET_ID: "1_I8rRBXr8E8e4K8B7DPt7FlYVE3_87ypTTmo35syMhY",
     TARGET_SHEET_NAME: "Respostas ao formulário 1",
-    DEST_SHEET_NAME: "Matriculas",
+    DEST_SHEET_NAME: "QR Code",
     COLUMNS: {
         NEW_MATRICULA: "Nova Matrícula",
         QR_CODE: "QR Code Nova Matrícula",

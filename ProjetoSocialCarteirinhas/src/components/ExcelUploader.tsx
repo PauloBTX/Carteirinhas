@@ -10,10 +10,7 @@ interface ExcelUploaderProps {
 export function ExcelUploader({ onDataLoaded }: ExcelUploaderProps) {
     const fileInputRef = useRef<HTMLInputElement>(null);
 
-    const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if (!file) return;
-
+    const processFile = (file: File) => {
         const reader = new FileReader();
         reader.onload = async (evt) => {
             const bstr = evt.target?.result;
@@ -120,8 +117,31 @@ export function ExcelUploader({ onDataLoaded }: ExcelUploaderProps) {
         reader.readAsBinaryString(file);
     };
 
+    const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        processFile(file);
+    };
+
+    const handleDrop = (e: React.DragEvent) => {
+        e.preventDefault();
+        const file = e.dataTransfer.files?.[0];
+        if (file && (file.name.endsWith('.xlsx') || file.name.endsWith('.xls'))) {
+            processFile(file);
+        }
+    };
+
+    const handleDragOver = (e: React.DragEvent) => {
+        e.preventDefault();
+    };
+
     return (
-        <div className="flex flex-col items-center justify-center p-6 border-2 border-dashed border-gray-300 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors cursor-pointer" onClick={() => fileInputRef.current?.click()}>
+        <div 
+            className="flex flex-col items-center justify-center p-6 border-2 border-dashed border-gray-300 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors cursor-pointer" 
+            onClick={() => fileInputRef.current?.click()}
+            onDragOver={handleDragOver}
+            onDrop={handleDrop}
+        >
             <Upload className="w-10 h-10 text-gray-400 mb-4" />
             <h3 className="text-lg font-semibold text-gray-700">Fazer Upload da Planilha (.xlsx)</h3>
             <p className="text-sm text-gray-500 mt-1">Apenas arquivos Excel com as abas Respostas e Matriculas</p>

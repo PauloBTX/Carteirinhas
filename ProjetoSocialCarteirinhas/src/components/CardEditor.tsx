@@ -9,14 +9,22 @@ interface CardEditorProps {
     student: Student;
     onUpdateStudent: (updated: Student) => void;
     dirHandle?: any;
+    photoMap: Record<string, string>;
 }
 
-export function CardEditor({ student, onUpdateStudent, dirHandle }: CardEditorProps) {
+export function CardEditor({ student, onUpdateStudent, dirHandle, photoMap }: CardEditorProps) {
     // Load background template
     const [bgImage] = useImage(`${import.meta.env.BASE_URL}input/CARTEIRINHA 2026 MODELO.png`);
 
+    const getInitialPhotoUrl = () => {
+        if (photoMap[student.cpfLimpo]) {
+            return photoMap[student.cpfLimpo];
+        }
+        return `${import.meta.env.BASE_URL}images/Fotos Projeto Social/${student.cpfLimpo}.jpg`;
+    };
+
     // Try loading student photo using various extensions
-    const [photoUrl, setPhotoUrl] = useState(`${import.meta.env.BASE_URL}images/Fotos Projeto Social/${student.cpfLimpo}.jpg`);
+    const [photoUrl, setPhotoUrl] = useState(getInitialPhotoUrl());
     const [photoImage, status] = useImage(photoUrl);
 
     const stageRef = useRef<any>(null);
@@ -72,9 +80,9 @@ export function CardEditor({ student, onUpdateStudent, dirHandle }: CardEditorPr
         return () => window.removeEventListener('resize', updateSize);
     }, [bgImage]);
 
-    // Try fallback to .png and .webp if .jpg fails
+    // Try fallback to .png and .webp if .jpg fails (only for server-side images)
     useEffect(() => {
-        if (status === 'failed') {
+        if (status === 'failed' && !photoUrl.startsWith('blob:')) {
             if (photoUrl.endsWith('.jpg')) {
                 setPhotoUrl(`${import.meta.env.BASE_URL}images/Fotos Projeto Social/${student.cpfLimpo}.png`);
             } else if (photoUrl.endsWith('.png')) {
@@ -83,15 +91,15 @@ export function CardEditor({ student, onUpdateStudent, dirHandle }: CardEditorPr
         }
     }, [status, photoUrl, student.cpfLimpo]);
 
-    // Reset photo URL when a new student is selected
+    // Reset photo URL when a new student is selected or photoMap changes
     useEffect(() => {
         if (localBlobUrlRef.current) {
             URL.revokeObjectURL(localBlobUrlRef.current);
             localBlobUrlRef.current = null;
         }
-        setPhotoUrl(`${import.meta.env.BASE_URL}images/Fotos Projeto Social/${student.cpfLimpo}.jpg`);
+        setPhotoUrl(getInitialPhotoUrl());
         setIsSelected(false);
-    }, [student.cpfLimpo]);
+    }, [student.cpfLimpo, photoMap]);
 
     // Handle QR code generation
     const [qrImage, setQrImage] = useState<HTMLImageElement | null>(null);

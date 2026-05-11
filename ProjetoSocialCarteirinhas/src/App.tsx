@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { ExcelUploader } from './components/ExcelUploader';
 import { StudentSidebar } from './components/StudentSidebar';
 import { CardEditor } from './components/CardEditor';
@@ -9,6 +9,8 @@ function App() {
     const [students, setStudents] = useState<Student[]>([]);
     const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
     const [dirHandle, setDirHandle] = useState<any>(null);
+    const [photoMap, setPhotoMap] = useState<Record<string, string>>({});
+    const photoInputRef = useRef<HTMLInputElement>(null);
 
     const handleSelectFolder = async () => {
         try {
@@ -18,6 +20,37 @@ function App() {
         } catch (e) {
             console.error("User cancelled or API not supported", e);
         }
+    };
+
+    const handlePhotoFolderUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const files = e.target.files;
+        if (!files) return;
+
+        const newMap: Record<string, string> = {};
+        let count = 0;
+        
+        for (let i = 0; i < files.length; i++) {
+            const file = files[i];
+            // Get filename without extension and clean it to get only digits
+            const fileName = file.name.split('.')[0];
+            const cleanCpf = fileName.replace(/\D/g, '').padStart(11, '0');
+            
+            if (cleanCpf.length === 11) {
+                const url = URL.createObjectURL(file);
+                newMap[cleanCpf] = url;
+                count++;
+            }
+        }
+
+        setPhotoMap(prev => {
+            // Revoke old URLs to free memory
+            Object.values(prev).forEach(url => {
+                if (url.startsWith('blob:')) URL.revokeObjectURL(url);
+            });
+            return newMap;
+        });
+
+        alert(`${count} fotos carregadas na memória com sucesso!`);
     };
 
     const handleDataLoaded = (data: Student[]) => {
@@ -46,13 +79,32 @@ function App() {
 
                 <div className="flex items-center gap-4">
                     {students.length > 0 && (
-                        <button
-                            onClick={handleSelectFolder}
-                            className={`text-sm font-medium px-4 py-2 rounded-md transition-colors ${dirHandle ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
-                            title="Navegadores bloqueiam criar pastas sozinhas. Se você escolher uma pasta aqui, os arquivos serão salvos lá automaticamente e de forma transparente pelo Chrome/Edge."
-                        >
-                            {dirHandle ? `📁 Destino: ${dirHandle.name}` : '📁 Escolher Pasta de Destino'}
-                        </button>
+                        <div className="flex items-center gap-2">
+                            <button
+                                onClick={() => photoInputRef.current?.click()}
+                                className={`text-sm font-medium px-4 py-2 rounded-md transition-colors ${Object.keys(photoMap).length > 0 ? 'bg-purple-100 text-purple-700' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
+                                title="Carregar pasta com fotos dos alunos. As fotos devem ter o CPF como nome do arquivo."
+                            >
+                                {Object.keys(photoMap).length > 0 ? `🖼️ ${Object.keys(photoMap).length} Fotos OK` : '🖼️ Carregar Pasta de Fotos'}
+                            </button>
+                            <input
+                                type="file"
+                                // @ts-ignore
+                                webkitdirectory=""
+                                directory=""
+                                className="hidden"
+                                ref={photoInputRef}
+                                onChange={handlePhotoFolderUpload}
+                            />
+                            
+                            <button
+                                onClick={handleSelectFolder}
+                                className={`text-sm font-medium px-4 py-2 rounded-md transition-colors ${dirHandle ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
+                                title="Navegadores bloqueiam criar pastas sozinhas. Se você escolher uma pasta aqui, os arquivos serão salvos lá automaticamente e de forma transparente pelo Chrome/Edge."
+                            >
+                                {dirHandle ? `📁 Destino: ${dirHandle.name}` : '📁 Pasta de Destino'}
+                            </button>
+                        </div>
                     )}
                     {students.length > 0 && (
                         <button
@@ -97,6 +149,7 @@ function App() {
                                         student={selectedStudent}
                                         onUpdateStudent={handleUpdateStudent}
                                         dirHandle={dirHandle}
+                                        photoMap={photoMap}
                                     />
                                 </div>
                             ) : (
